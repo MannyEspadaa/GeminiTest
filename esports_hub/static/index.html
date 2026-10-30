@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Esports Program Central Hub</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-dark text-light">
+  <!-- Toast Notification System -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Top Navigation Header -->
+  <header class="navbar">
+    <div class="nav-container">
+      <div class="brand" onclick="navigateTo('home')">
+        <div class="brand-logo">⚔️</div>
+        <div>
+          <span class="brand-title">ESPORTS HUB</span>
+          <span class="brand-subtitle">Central Collegiate Program</span>
+        </div>
+      </div>
+
+      <nav class="nav-links" id="main-nav">
+        <button class="nav-btn active" data-view="home" onclick="navigateTo('home')">Overview & Calendar</button>
+        <button class="nav-btn" data-view="dashboard" id="nav-dashboard" onclick="navigateTo('dashboard')" style="display: none;">My Dashboard</button>
+        <button class="nav-btn" data-view="games" onclick="navigateTo('games')">Game Communities</button>
+        <button class="nav-btn" data-view="teams" id="nav-teams" onclick="navigateTo('teams')" style="display: none;">Teams</button>
+        <button class="nav-btn" data-view="analytics" id="nav-analytics" onclick="navigateTo('analytics')" style="display: none;">VODs & Analytics</button>
+        <button class="nav-btn" data-view="admin" id="nav-admin" onclick="navigateTo('admin')" style="display: none;">Admin Console</button>
+      </nav>
+
+      <div class="nav-auth" id="nav-auth-container">
+        <!-- Injected dynamically via app.js -->
+      </div>
+
+      <!-- Mobile Hamburger -->
+      <button class="mobile-toggle" onclick="toggleMobileMenu()" aria-label="Toggle Navigation">☰</button>
+    </div>
+  </header>
+
+  <!-- Quick Demo Role Switcher Bar -->
+  <aside class="demo-bar" aria-label="Role Switcher">
+    <div class="demo-bar-inner">
+      <span class="demo-label">⚡ <strong>Instant Role Switcher:</strong></span>
+      <div class="demo-buttons">
+        <button class="btn btn-xs btn-outline" onclick="quickLogin('admin')">👑 Admin</button>
+        <button class="btn btn-xs btn-outline" onclick="quickLogin('val_manager')">🛡️ Valorant GM</button>
+        <button class="btn btn-xs btn-outline" onclick="quickLogin('lol_manager')">🛡️ LoL GM</button>
+        <button class="btn btn-xs btn-outline" onclick="quickLogin('ace_duelist')">🎯 Player (Varsity)</button>
+        <button class="btn btn-xs btn-outline" onclick="quickLogin('alex_fan')">👥 Community Member</button>
+        <button class="btn btn-xs btn-outline" onclick="quickLogin('jordan_new')">👤 Regular User</button>
+        <button class="btn btn-xs btn-danger-outline" onclick="handleLogout()">🚪 Logout</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Application Container -->
+  <main class="content-wrapper">
+
+    <!-- VIEW 1: HOME & PUBLIC CALENDAR (NFREQ8) -->
+    <section id="view-home" class="view-section active">
+      <div class="hero-card">
+        <div class="hero-content">
+          <div class="badge badge-cyan">Collegiate Esports Operations</div>
+          <h1 class="hero-title">Official Program Hub</h1>
+          <p class="hero-desc">
+            The central platform for competitive collegiate rosters, community game channels, event schedules, performance analytics, and YouTube VOD reviews.
+          </p>
+          <div class="hero-actions">
+            <button class="btn btn-primary" onclick="openRegisterModal()" id="hero-join-btn">Join Program</button>
+            <button class="btn btn-outline" onclick="downloadICS()">📅 Export iCal (.ics)</button>
+            <button class="btn btn-secondary" onclick="navigateTo('games')">Browse Games</button>
+          </div>
+        </div>
+        <div class="hero-stats">
+          <div class="stat-box">
+            <div class="stat-num" id="stat-game-count">4</div>
+            <div class="stat-label">Active Titles</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-num" id="stat-event-count">0</div>
+            <div class="stat-label">Upcoming Events</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-num" id="stat-sched-count">0</div>
+            <div class="stat-label">Scheduled Matches</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Calendar Controls & Schedule Hub -->
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">Schedule & Events Calendar</h2>
+          <p class="section-subtitle">Official scrims, practice sessions, tournaments, and campus LANs.</p>
+        </div>
+        <div class="header-actions">
+          <div class="filter-group">
+            <button class="filter-pill active" onclick="filterCalendar('all', this)">All</button>
+            <button class="filter-pill" onclick="filterCalendar('match', this)">Matches</button>
+            <button class="filter-pill" onclick="filterCalendar('practice', this)">Practices</button>
+            <button class="filter-pill" onclick="filterCalendar('tournament', this)">Tournaments</button>
+            <button class="filter-pill" onclick="filterCalendar('event', this)">Campus Events</button>
+          </div>
+          <div id="calendar-admin-controls" style="display: none;">
+            <button class="btn btn-sm btn-primary" onclick="openCreateScheduleModal()">+ Schedule Match</button>
+            <button class="btn btn-sm btn-secondary" onclick="openCreateEventModal()">+ Create Event</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Calendar & Events Grid -->
+      <div class="calendar-layout">
+        <!-- Main Feed of Events & Schedules -->
+        <div class="calendar-feed" id="calendar-feed">
+          <div class="loading-spinner">Loading official calendar...</div>
+        </div>
+
+        <!-- Sidebar: Event Highlights & Integrations -->
+        <div class="calendar-sidebar">
+          <div class="card">
+            <h3 class="card-title">Calendar & Discord Integration</h3>
+            <p class="text-muted text-sm">
+              Sync match fixtures directly with your local calendar application or Google Calendar.
+            </p>
+            <button class="btn btn-sm btn-outline btn-block mt-2" onclick="downloadICS()">⬇️ Download .ICS Calendar Feed</button>
+            <div class="mt-3 pt-3 border-top text-xs text-muted">
+              ✓ Local zero-credential adapter active<br>
+              ✓ Filtered automatically by your assigned rosters
+            </div>
+          </div>
+
+          <div class="card mt-3">
+            <h3 class="card-title">Game Community Quick Links</h3>
+            <div id="home-games-list" class="mini-list"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 2: AUTHENTICATED DASHBOARD (FREQ10) -->
+    <section id="view-dashboard" class="view-section">
+      <div class="section-header">
+        <div>
+          <div class="badge badge-purple" id="dash-role-badge">Student</div>
+          <h2 class="section-title" id="dash-welcome">Welcome Back</h2>
+          <p class="section-subtitle">Your personal schedule, team assignments, and performance overview.</p>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-sm btn-outline" onclick="openProfileModal(currentUser.id)">View Full Profile</button>
+          <button class="btn btn-sm btn-secondary" onclick="openDiscordModal()">Connect Discord</button>
+        </div>
+      </div>
+
+      <div class="dashboard-grid">
+        <!-- Card 1: My Teams & Rosters -->
+        <div class="card">
+          <div class="card-header-flex">
+            <h3 class="card-title">My Roster & Team Memberships</h3>
+            <button class="btn btn-xs btn-outline" onclick="navigateTo('games')">Browse Games</button>
+          </div>
+          <div id="dash-rosters-list" class="mt-2"></div>
+          <div id="dash-teams-list" class="mt-3 pt-3 border-top"></div>
+        </div>
+
+        <!-- Card 2: Upcoming Personal Commitments -->
+        <div class="card">
+          <div class="card-header-flex">
+            <h3 class="card-title">My Upcoming Schedule</h3>
+            <button class="btn btn-xs btn-outline" onclick="downloadICS()">Export</button>
+          </div>
+          <div id="dash-schedules-list" class="mt-2"></div>
+        </div>
+
+        <!-- Card 3: Quick Role Operations -->
+        <div class="card" id="dash-operations-card">
+          <h3 class="card-title">Operational Access</h3>
+          <p class="text-sm text-muted">Authorized tools based on your active role hierarchy:</p>
+          <div class="op-links" id="dash-role-actions"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 3: GAME COMMUNITIES & ROSTERS (FREQ20, FREQ22) -->
+    <section id="view-games" class="view-section">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">Game Communities</h2>
+          <p class="section-subtitle">Join official title rosters to participate in scrims, community nights, and team tryouts.</p>
+        </div>
+      </div>
+
+      <div class="games-grid" id="games-container">
+        <div class="loading-spinner">Loading game communities...</div>
+      </div>
+    </section>
+
+    <!-- VIEW 4: TEAMS MANAGEMENT (FREQ26-28, FREQ44) -->
+    <section id="view-teams" class="view-section">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">Competitive Teams & Shell Management</h2>
+          <p class="section-subtitle" id="teams-subtitle">Assigned rosters, shell teams, and player line-ups.</p>
+        </div>
+        <div class="header-actions" id="teams-header-actions">
+          <!-- GM / Admin create team button -->
+        </div>
+      </div>
+
+      <div class="teams-grid" id="teams-container">
+        <div class="loading-spinner">Loading teams...</div>
+      </div>
+    </section>
+
+    <!-- VIEW 5: VODS & ANALYTICS (FREQ29-31, FREQ43, FREQ45-46) -->
+    <section id="view-analytics" class="view-section">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">Team Analytics & VOD Reviews</h2>
+          <p class="section-subtitle">Match performance data, calculated team metrics, and video breakdowns.</p>
+        </div>
+        <div class="header-actions">
+          <div class="select-wrapper">
+            <label for="analytics-team-select" class="sr-only">Select Team</label>
+            <select id="analytics-team-select" class="form-input" onchange="onAnalyticsTeamChange(this.value)">
+              <!-- Populated via JS -->
+            </select>
+          </div>
+          <div id="analytics-gm-controls" style="display: none;">
+            <button class="btn btn-sm btn-primary" onclick="openUploadVODModal()">+ Upload VOD</button>
+            <button class="btn btn-sm btn-secondary" onclick="openUploadCSVModal()">📊 Ingest CSV Data</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stat Cards Calculated from CSV -->
+      <div class="analytics-stat-row" id="analytics-stat-cards">
+        <div class="stat-card">
+          <div class="stat-label">Win Rate</div>
+          <div class="stat-value text-cyan" id="stat-win-rate">--%</div>
+          <div class="stat-sub" id="stat-record">0 Wins / 0 Losses</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Team K/D Ratio</div>
+          <div class="stat-value text-green" id="stat-kd-ratio">--</div>
+          <div class="stat-sub" id="stat-total-kills">0 Kills / 0 Deaths</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Average Kills / Match</div>
+          <div class="stat-value text-purple" id="stat-avg-kills">--</div>
+          <div class="stat-sub">Across recorded matches</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Average Deaths / Match</div>
+          <div class="stat-value text-orange" id="stat-avg-deaths">--</div>
+          <div class="stat-sub">Across recorded matches</div>
+        </div>
+      </div>
+
+      <!-- Two Column Layout: VODs on left, Datasets & Coaching notes on right -->
+      <div class="analytics-layout mt-4">
+        <!-- VOD Column -->
+        <div class="analytics-col">
+          <div class="card">
+            <div class="card-header-flex">
+              <h3 class="card-title">🎥 YouTube Match VODs</h3>
+            </div>
+            <div id="vods-list" class="mt-3">
+              <div class="text-muted text-sm">Select a team to inspect VOD recordings.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Data & Comments Column -->
+        <div class="analytics-col">
+          <div class="card">
+            <div class="card-header-flex">
+              <h3 class="card-title">📈 Uploaded Match Data & Comments</h3>
+            </div>
+            <div id="datasets-list" class="mt-3">
+              <div class="text-muted text-sm">Select a team to inspect CSV performance datasets.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 6: ADMINISTRATOR CONSOLE (FREQ32-34, FREQ36-37) -->
+    <section id="view-admin" class="view-section">
+      <div class="section-header">
+        <div>
+          <div class="badge badge-crimson">Restricted Access</div>
+          <h2 class="section-title">Administrator User & Role Management</h2>
+          <p class="section-subtitle">Account moderation, suspension, game manager grants, and role hierarchy oversight.</p>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-sm btn-outline" onclick="loadAdminUsers()">🔄 Refresh Directory</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="table-responsive">
+          <table class="data-table" id="admin-users-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Full Name</th>
+                <th>Username</th>
+                <th>Institutional Email</th>
+                <th>Discord</th>
+                <th>Roles & Assignments</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="admin-users-body">
+              <tr>
+                <td colspan="8" class="text-center py-4 text-muted">Loading user directory...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODALS CONTAINER -->
+
+  <!-- 1. Authentication Modals (Register / Login / Token Verification) -->
+  <div class="modal" id="modal-login">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">Sign In</h3>
+        <button class="modal-close" onclick="closeModal('modal-login')">×</button>
+      </div>
+      <form onsubmit="handleLoginSubmit(event)">
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Username or Official Email</label>
+            <input type="text" id="login-username" class="form-input" required placeholder="user@esports.edu">
+          </div>
+          <div class="form-group">
+            <label>Password</label>
+            <input type="password" id="login-password" class="form-input" required placeholder="••••••••">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="openRegisterModal()">Need an Account?</button>
+          <button type="submit" class="btn btn-primary">Sign In</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal" id="modal-register">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">Create Official Account</h3>
+        <button class="modal-close" onclick="closeModal('modal-register')">×</button>
+      </div>
+      <form onsubmit="handleRegisterSubmit(event)">
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Full Name</label>
+            <input type="text" id="reg-fullname" class="form-input" required placeholder="Marcus Vance">
+          </div>
+          <div class="form-group">
+            <label>Username</label>
+            <input type="text" id="reg-username" class="form-input" required placeholder="marcus_v">
+          </div>
+          <div class="form-group">
+            <label>Institutional Email (.edu domain required)</label>
+            <input type="email" id="reg-email" class="form-input" required placeholder="student@esports.edu">
+            <span class="form-help">Must belong to an official .edu institutional domain.</span>
+          </div>
+          <div class="form-group">
+            <label>Password (min 6 characters)</label>
+            <input type="password" id="reg-password" class="form-input" required minlength="6" placeholder="••••••••">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="openLoginModal()">Already registered?</button>
+          <button type="submit" class="btn btn-primary">Submit Registration</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal" id="modal-verify">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">Email Verification (Local Adapter)</h3>
+        <button class="modal-close" onclick="closeModal('modal-verify')">×</button>
+      </div>
+      <form onsubmit="handleVerifySubmit(event)">
+        <div class="modal-body">
+          <p class="text-sm text-muted">
+            Under the approved local implementation constraints, verification tokens are processed directly without external mail relays.
+          </p>
+          <div class="form-group mt-3">
+            <label>Verification Token</label>
+            <input type="text" id="verify-token-input" class="form-input" required placeholder="Paste token here">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Verify & Activate</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 2. Profile View / Discord Linking Modal -->
+  <div class="modal" id="modal-profile">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title" id="profile-modal-title">User Profile</h3>
+        <button class="modal-close" onclick="closeModal('modal-profile')">×</button>
+      </div>
+      <div class="modal-body" id="profile-modal-body">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="modal-discord">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">Connect Discord Account</h3>
+        <button class="modal-close" onclick="closeModal('modal-discord')">×</button>
+      </div>
+      <form onsubmit="handleDiscordSubmit(event)">
+        <div class="modal-body">
+          <p class="text-sm text-muted">
+            Link your Discord username to appear on your profile and team rosters.
+          </p>
+          <div class="form-group mt-3">
+            <label>Discord Username / Handle</label>
+            <input type="text" id="discord-input" class="form-input" required placeholder="Username#0000 or username">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="closeModal('modal-discord')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Discord Tag</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 3. Team Management Modal (Create / Add Member) -->
+  <div class="modal" id="modal-create-team">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">Create Shell Team</h3>
+        <button class="modal-close" onclick="closeModal('modal-create-team')">×</button>
+      </div>
+      <form onsubmit="handleCreateTeamSubmit(event)">
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Select Game Title</label>
+            <select id="team-game-select" class="form-input" required></select>
+          </div>
+          <div class="form-group">
+            <label>Team Name</label>
+            <input type="text" id="team-name-input" class="form-input" required placeholder="Valorant Varsity">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Create Team</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal" id="modal-add-member">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">Promote Community Member to Team</h3>
+        <button class="modal-close" onclick="closeModal('modal-add-member')">×</button>
+      </div>
+      <form onsubmit="handleAddMemberSubmit(event)">
+        <div class="modal-body">
+          <input type="hidden" id="add-member-team-id">
+          <div class="form-group">
+            <label>Select Roster Member</label>
+            <select id="add-member-user-select" class="form-input" required></select>
+          </div>
+          <div class="form-group">
+            <label>Position / Role in Team</label>
+            <input type="text" id="add-member-role-input" class="form-input" placeholder="Duelist / Starter / Sub">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Assign & Promote to Player</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 4. Schedule & Event Creation Modals -->
+  <div class="modal" id="modal-create-schedule">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">Schedule Game Fixture / Practice</h3>
+        <button class="modal-close" onclick="closeModal('modal-create-schedule')">×</button>
+      </div>
+      <form onsubmit="handleCreateScheduleSubmit(event)">
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Game Title</label>
+            <select id="sched-game-select" class="form-input" required onchange="populateSchedTeamSelect(this.value)"></select>
+          </div>
+          <div class="form-group">
+            <label>Specific Team (Optional)</label>
+            <select id="sched-team-select" class="form-input">
+              <option value="">-- All / General Game Schedule --</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Fixture Title</label>
+            <input type="text" id="sched-title-input" class="form-input" required placeholder="Collegiate Match vs Rutgers">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Event Type</label>
+              <select id="sched-type-select" class="form-input">
+                <option value="match">Match</option>
+                <option value="practice">Practice</option>
+                <option value="scrim">Scrim</option>
+                <option value="tournament">Tournament</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Opponent (If applicable)</label>
+              <input type="text" id="sched-opponent-input" class="form-input" placeholder="Rowan University">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Date</label>
+              <input type="date" id="sched-date-input" class="form-input" required>
+            </div>
+            <div class="form-group">
+              <label>Start Time</label>
+              <input type="time" id="sched-start-input" class="form-input" required>
+            </div>
+            <div class="form-group">
+              <label>End Time</label>
+              <input type="time" id="sched-end-input" class="form-input" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Venue / Server</label>
+            <input type="text" id="sched-venue-input" class="form-input" placeholder="Esports Arena Lab 204">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Save to Schedule</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal" id="modal-create-event">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">Create Program Event</h3>
+        <button class="modal-close" onclick="closeModal('modal-create-event')">×</button>
+      </div>
+      <form onsubmit="handleCreateEventSubmit(event)">
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Event Name</label>
+            <input type="text" id="event-name-input" class="form-input" required placeholder="Campus Invitational LAN">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Date</label>
+              <input type="date" id="event-date-input" class="form-input" required>
+            </div>
+            <div class="form-group">
+              <label>Start Time</label>
+              <input type="time" id="event-start-input" class="form-input" required>
+            </div>
+            <div class="form-group">
+              <label>End Time</label>
+              <input type="time" id="event-end-input" class="form-input" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Location</label>
+            <input type="text" id="event-location-input" class="form-input" required placeholder="Student Center Ballroom">
+          </div>
+          <div class="form-group">
+            <label>Audience Visibility</label>
+            <select id="event-vis-select" class="form-input">
+              <option value="public">Public (All students & visitors)</option>
+              <option value="roster">Roster Members Only</option>
+              <option value="team">Team Members Only</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Create Event</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 5. Upload VOD / CSV Modals -->
+  <div class="modal" id="modal-upload-vod">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">Upload Match VOD</h3>
+        <button class="modal-close" onclick="closeModal('modal-upload-vod')">×</button>
+      </div>
+      <form onsubmit="handleUploadVODSubmit(event)">
+        <div class="modal-body">
+          <input type="hidden" id="vod-team-id">
+          <div class="form-group">
+            <label>VOD Title</label>
+            <input type="text" id="vod-title-input" class="form-input" required placeholder="Quarterfinals vs Temple - Map 1">
+          </div>
+          <div class="form-group">
+            <label>YouTube Video Link or Embed URL</label>
+            <input type="url" id="vod-url-input" class="form-input" required placeholder="https://www.youtube.com/watch?v=...">
+          </div>
+          <div class="form-group">
+            <label>Coaching Notes / Timestamps</label>
+            <textarea id="vod-notes-input" class="form-input" rows="3" placeholder="Key rounds: 14:32 retake setup, 22:15 eco round execution"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Upload VOD</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal" id="modal-upload-csv">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">Ingest Team CSV Performance Data</h3>
+        <button class="modal-close" onclick="closeModal('modal-upload-csv')">×</button>
+      </div>
+      <form onsubmit="handleUploadCSVSubmit(event)">
+        <div class="modal-body">
+          <input type="hidden" id="csv-team-id">
+          <div class="form-group">
+            <label>Dataset Name / Filename</label>
+            <input type="text" id="csv-filename-input" class="form-input" required placeholder="fall_2026_matches.csv">
+          </div>
+          <div class="form-group">
+            <label>CSV Content (Header: match_date,opponent,map,result,kills,deaths,assists,score)</label>
+            <textarea id="csv-content-input" class="form-input code-font" rows="7" required placeholder="match_date,opponent,map,result,kills,deaths,assists,score&#10;2026-10-15,Temple,Haven,WIN,68,52,34,13-9&#10;2026-10-18,Drexel,Ascent,WIN,74,48,41,13-7&#10;2026-10-22,Rowan,Bind,LOSS,58,65,29,10-13"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Calculate & Store Statistics</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 6. Role Assignment Modal for Admin -->
+  <div class="modal" id="modal-grant-role">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">Modify User Role Permissions</h3>
+        <button class="modal-close" onclick="closeModal('modal-grant-role')">×</button>
+      </div>
+      <form onsubmit="handleGrantRoleSubmit(event)">
+        <div class="modal-body">
+          <input type="hidden" id="role-target-user-id">
+          <div class="form-group">
+            <label>Target User</label>
+            <input type="text" id="role-target-username" class="form-input" readonly>
+          </div>
+          <div class="form-group">
+            <label>Role to Grant</label>
+            <select id="role-select" class="form-input" onchange="toggleGameAssignmentSelect(this.value)">
+              <option value="game_manager">Game Manager</option>
+              <option value="admin">Administrator</option>
+              <option value="player">Player</option>
+            </select>
+          </div>
+          <div class="form-group" id="role-game-group">
+            <label>Assigned Game Title (for Game Manager)</label>
+            <select id="role-game-select" class="form-input"></select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Apply Role Grant</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Application Controller Script -->
+  <script src="/static/app.js"></script>
+</body>
+</html>
